@@ -20,7 +20,6 @@ async def index(request:Request):
 
 
 @app.post('/predict/', response_model=List[ItemOut])
-#@app.post('/predict/')
 async def mmama_predict(items: List[ItemIn]):
     df = pd.DataFrame([i.model_dump() for i in items])
     model = joblib.load('model/mmama_predictor.sav')

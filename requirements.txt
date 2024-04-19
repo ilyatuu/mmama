@@ -10,3 +10,4 @@ imblearn
 mlxtend
 xgboost
 seaborn
+Jinja2
