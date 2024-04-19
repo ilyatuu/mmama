@@ -1,0 +1,133 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="PHIT MMama ML Model">
+        <meta name="author" content="Isaac Lyatuu, Emmanuel Mwanga">
+        <link rel="shortcut icon" href="static/assets/favicon.ico" type="image/x-icon" />
+        <link rel="apple-touch-icon" href="static/assets/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="57x57" href="static/assets/apple-touch-icon-57x57.png" />
+        <link rel="apple-touch-icon" sizes="72x72" href="static/assets/apple-touch-icon-72x72.png" />
+        <link rel="apple-touch-icon" sizes="76x76" href="static/assets/apple-touch-icon-76x76.png" />
+        <link rel="apple-touch-icon" sizes="114x114" href="static/assets/apple-touch-icon-114x114.png" />
+        <link rel="apple-touch-icon" sizes="120x120" href="static/assets/apple-touch-icon-120x120.png" />
+        <link rel="apple-touch-icon" sizes="144x144" href="static/assets/apple-touch-icon-144x144.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="static/assets/apple-touch-icon-152x152.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="static/assets/apple-touch-icon-180x180.png" />
+        <title>MMama API</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    </head>
+    <bod>
+        <main>
+            <div class="container py-4">
+              <header class="pb-3 mb-4 border-bottom">
+                <a href="/" class="d-flex align-items-center text-body-emphasis text-decoration-none">
+                    <img src="{{ url_for('static', path='assets/phit.png') }}" class="img-thumbnail" width="40" height="32" />
+                    <span class="fs-4 ms-2">Prime Health Initiative Tanzania (PHIT)</span>
+                </a>
+              </header>
+          
+              <div class="p-5 bg-body-tertiary rounded-3">
+                <div class="container-fluid py-2">
+                  <h1 class="display-5 fw-bold">MMama Prediction Model</h1>
+                  <p class="col-md-12">
+                    MLINDE Mama (Mmama) Prediction Model is a Machine Learning (ML) model to predict adverse maternal 
+                    outcomes using data from antenatal care visits. This model has been developed as part of the MLINDE Mama Project 
+                    at the Prime Health Initiative Tanzania (PHIT) under BMGF award [add more content]
+                    <br /> <br />
+                    Click <a href="#">here</a> to learn more about the model.
+                    Click <a href="#">here</a> to learn more about the PHIT
+                  </p>
+                  <p>Interact directly with the API using example code below</p>
+                </div>
+                <div class="col-md-12 p-3 mb-2 bg-dark text-white rounded-3 text-start">
+                    <code>
+                        $ curl -X POST "127.0.0.1:8000/predict/" -H "accept: application/json" -H "Content-Type: application/json" -d '[{"systolic":120,"diastolic":78,"gestationage":29,"protein_in_urine":0,"temperature":37,"bmi":24.44,"blood_for_glucose":5.7},{"systolic":110,"diastolic":80,"gestationage":20,"protein_in_urine":1,"temperature":37,"bmi":22.44,"blood_for_glucose":5.6}]'
+                    </code>
+                </div>
+              </div>
+          
+              <div class="row align-items-md-stretch">
+                <div class="col-md-6">
+                  <div class="h-100 p-5 bg-body-tertiary border rounded-3">
+                    <h2>Individual Prediction</h2>
+                    <form>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="number" min="100" max="160" value="120" step="1" class="form-control" id="systolic" name="systolic" placeholder="systolic">
+                                    <label for="systolic">systolic</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="number" min="60" max="100" value="80" step="1" class="form-control" id="diastolic" name="diastolic" placeholder="diastolic">
+                                    <label for="diastolic">diastolic</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="number" min="0" max="42" value="28" class="form-control" id="gestationalage" name="gestationalage" placeholder="gestationalage">
+                                    <label for="gestationalage">gestational Age</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="number" min="0" max="1" value="0" step="1" class="form-control" id="protein_in_urine" name="protein_in_urine" placeholder="protein_in_urine">
+                                    <label for="protein_in_urine">protein in urine</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="number" min="1.0" max="10" value="5.7" class="form-control" id="blood_for_glucose" name="blood_for_glucose" placeholder="blood_for_glucose">
+                                    <label for="blood_for_glucose">blood for glucose</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="number" min="32" max="40" value="37" class="form-control" id="temperature" name="temperature" placeholder="temperature">
+                                    <label for="temperature">temperature</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="number" min="20.0" max="30.0" value="24.44" class="form-control" id="bmi" name="bmi" placeholder="bmi">
+                                    <label for="bmi">bmi</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-secondary" type="button">Predict</button>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <textarea id="results" name="results" rows="2" class="form-control"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="h-100 p-5 bg-body-tertiary border rounded-3">
+                      <h2>Input a CSV File</h2>
+                      <p>Input a csv file with the following columns</p>
+                      <p>systolic, diastolic, gestationalage, protein_in_urine, temperature, bmi, blood_for_glucose</p>
+                      <div class="mb-3">
+                        <input class="form-control" id="formFileSm" type="file" accept=".csv">
+                      </div>
+                      <button class="btn btn-outline-secondary" type="button">submit</button>
+                    </div>
+                  </div>
+              </div>
+          
+              <footer class="pt-3 mt-4 text-body-secondary border-top">
+                © PHIT 2024
+              </footer>
+            </div>
+        </main>
+    </bod>
+</html>

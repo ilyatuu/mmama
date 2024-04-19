@@ -1,0 +1,13 @@
+{
+    "features":[
+        {
+            "systolic":120,
+            "diastolic":78,
+            "gestationalage":29,
+            "protein_in_urine":0,
+            "temperature":37,
+            "bmi":24.44,
+            "blood_for_glucose":5.7
+        }
+    ]
+}
