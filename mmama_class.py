@@ -10,5 +10,11 @@ class ItemIn(BaseModel):
     blood_for_glucose:float
 
 class ItemOut(BaseModel):
-    id:str
+    systolic: float
+    diastolic: float
+    gestationage: float
+    protein_in_urine:int
+    temperature:float
+    bmi:float
+    blood_for_glucose:float
     prediction:str

@@ -25,8 +25,10 @@ async def mmama_predict(items: List[ItemIn]):
     df = pd.DataFrame([i.model_dump() for i in items])
     model = joblib.load('model/mmama_predictor.sav')
     predictions = model().predict(df.to_numpy())
-    print(predictions)
-    return [{"id":  "1", "prediction": "value"}, {"id":  "2", "prediction": "value"}]
+    df['prediction'] = predictions
+    dict_data = df.to_dict(orient="records")
+    #return [{"id":  "1", "prediction": "value"}, {"id":  "2", "prediction": "value"}]
+    return dict_data
 
 
 if __name__ == '__main__':
