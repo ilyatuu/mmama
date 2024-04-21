@@ -1,4 +1,30 @@
 {% extends 'base.html' %}
+{% block inlinestyle %}
+<style>
+    .bootstrap-table .fixed-table-container .table thead th .th-inner {
+      overflow: inherit;
+    }
+    .table-header-rotated td.id {
+      font-weight: bold;
+    }
+    .table-header-rotated th {
+      height: 120px;
+      white-space: nowrap;
+    }
+    .table-header-rotated th:not(.id) > div {
+      transform: translate(-9px, 0px) rotate(-90deg);
+      width: 30px;
+    }
+    .table-header-rotated th > div > span {
+      padding: 5px 10px;
+    }
+
+    .bootstrap-table .fixed-table-pagination >.pagination-detail .page-list {
+        display:none;
+    }
+</style>
+{% endblock inlinestyle %}
+
 {% block content %}
 <main>
     <div class="container py-4">
@@ -49,8 +75,8 @@
                     </div>
                     <div class="col-md-4">
                         <div class="form-floating mb-3">
-                            <input type="number" min="0" max="42" value="28" class="form-control" id="gestationalage" name="gestationalage" placeholder="gestationalage">
-                            <label for="gestationalage">gestational Age</label>
+                            <input type="number" min="0" max="42" value="28" class="form-control" id="gestationage" name="gestationage" placeholder="gestationage">
+                            <label for="gestationage">gestational Age</label>
                         </div>
                     </div>
                 </div>
@@ -63,7 +89,7 @@
                     </div>
                     <div class="col-md-4">
                         <div class="form-floating mb-3">
-                            <input type="number" min="1.0" max="10" value="5.7" class="form-control" id="blood_for_glucose" name="blood_for_glucose" placeholder="blood_for_glucose">
+                            <input type="number" min="1.0" max="10" value="5.7" step=".1" class="form-control" id="blood_for_glucose" name="blood_for_glucose" placeholder="blood_for_glucose">
                             <label for="blood_for_glucose">blood for glucose</label>
                         </div>
                     </div>
@@ -77,17 +103,20 @@
                 <div class="row">
                     <div class="col-md-4">
                         <div class="form-floating mb-3">
-                            <input type="number" min="20.0" max="30.0" value="24.44" class="form-control" id="bmi" name="bmi" placeholder="bmi">
+                            <input type="number" min="20.0" max="30.0" value="24.44" step=".01" class="form-control" id="bmi" name="bmi" placeholder="bmi">
                             <label for="bmi">bmi</label>
                         </div>
                     </div>
                 </div>
                 <div>
-                    <button class="btn btn-outline-secondary" type="button">Predict</button>
+                    <button class="btn btn-outline-secondary" type="submit">Predict</button>
                 </div>
                 <div class="row mt-3">
                     <div class="col-md-12">
-                        <textarea id="results" name="results" rows="2" class="form-control"></textarea>
+                        <div class="form-floating">
+                            <textarea id="results" name="results" class="form-control" placeholder="Prediction results" style="height: 80px"></textarea>
+                            <label for="results">prediction results</label>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -99,9 +128,35 @@
               <p>Input a csv file with the following columns</p>
               <p>systolic, diastolic, gestationalage, protein_in_urine, temperature, bmi, blood_for_glucose</p>
               <div class="mb-3">
-                <input class="form-control" id="formFileSm" type="file" accept=".csv">
+                <input class="form-control" id="inputFile" name="inputFile" type="file" accept=".csv">
               </div>
-              <button class="btn btn-outline-secondary" type="button">submit</button>
+              <button class="btn btn-outline-secondary" type="button" id="btnSubmitCSV" name="btnSubmitCSV">predict</button>
+              <div id="toolbar"></div>
+              <div class="mt-4">
+                <table  id="tblResults"
+                        data-toggle="table"
+                        data-toolbar="#toolbar"
+                        data-show-export="false"
+                        data-show-columns="false"
+                        data-show-toggle="true"
+                        data-search="false"
+                        data-height="460"
+                        data-pagination="true"
+                        data-classes="table table-hover table-header-rotated">
+                    <thead>
+                        <tr>
+                            <th data-field="systolic" data-sortable="true">systolic</th>
+                            <th data-field="diastolic" data-sortable="true">diastolic</th>
+                            <th data-field="gestationage" data-sortable="true">gest age</th>
+                            <th data-field="protein_in_urine" data-sortable="true">protein in urine</th>
+                            <th data-field="temperature" data-sortable="true">temperature</th>
+                            <th data-field="bmi" data-sortable="true">bmi</th>
+                            <th data-field="blood_for_glucose" data-sortable="true">blood for glucose</th>
+                            <th data-field="prediction" data-sortable="true">prediction</th>
+                        </tr>
+                    </thead>
+                </table>
+              </div>
             </div>
           </div>
       </div>
@@ -115,7 +170,94 @@
 {% block javascript %}
 <script>
     $(document).ready(function () {
-        
+
+        // $.fn.nval = function() {
+        //     return Number(this.val())
+        // };
+        // the above creates nval() function so that you can use as
+        // $('#systolic').nval()
+
+        var data1;
+
+        $.valHooks.number = {
+            get: function( elem ) {
+                return elem.value * 1;
+            }
+        };
+
+        $('form').submit(function(e){
+            e.preventDefault();
+            const data = [{
+                systolic:$('#systolic').val(),
+                diastolic:$('#diastolic').val(),
+                gestationage:$('#gestationage').val(),
+                protein_in_urine:$('#protein_in_urine').val(),
+                temperature:$('#temperature').val(),
+                bmi:$('#bmi').val(),
+                blood_for_glucose:$('#blood_for_glucose').val()
+            }];
+            $.ajax({
+                type:'POST',
+                url:'predict',
+                data:JSON.stringify(data),
+                contentType:'application/json'
+            }).done((data)=>{
+                console.log({data});
+                $('#results').text( data[0].prediction );
+            }).fail((err)=>{
+                console.log(err);
+                $('#results').text('error with the input file');
+            }).always(()=>{
+                //console.log('always called')
+            })
+        });
+
+        // Input CSV file
+
+        $('#inputFile').change(function(e){
+            var ext = $("input#inputFile").val().split(".").pop().toLowerCase();
+            if($.inArray(ext, ["csv"]) == -1) {
+                alert('Invalid file name');
+                return false;
+            }
+
+            if (e.target.files != undefined){
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var rows = e.target.result.split("\r\n");
+                    if (rows.length > 0){
+                        var cols = rows[0].split(',');
+                        var jarr = new Array();
+                        for(var i=1;i<rows.length;i++){
+                            row = rows[i].split(',')
+                            var json = {};
+                            for(var j=0;j<row.length;j++){
+                                json[cols[j]] = parseFloat(row[j]);
+                            }
+                            jarr.push(json);
+                        }
+                        data1 = jarr
+                    }
+                }
+                reader.readAsText($("#inputFile")[0].files[0]);
+            }
+        })
+
+        $('#btnSubmitCSV').click(function(){
+            $.ajax({
+                type:'POST',
+                url:'predict',
+                data:JSON.stringify(data1),
+                contentType:'application/json'
+            }).done((data)=>{
+                console.log(data);
+                $('#tblResults').bootstrapTable('load',data);
+            }).fail((err)=>{
+                console.log(err);
+            }).always(()=>{
+                //console.log('always called');
+            })
+        })
     })
 </script>
 {% endblock javascript %}
