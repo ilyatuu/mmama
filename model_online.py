@@ -29,13 +29,6 @@ BASE_DIR = Path(__file__).resolve(strict=True).parent
 
 anc_visits = pd.read_csv( Path(BASE_DIR).joinpath("data/anc_visits.csv") , low_memory = False)
 
-##some basic data observation
-#anc_head()
-#anc_visits.info()
-#anc_visits.shape
-#anc_visits['blood_for_glucose'].describe()
-#anc_visits['visit_number'].value_counts()
-
 ##reduce dataset to key variables
 data1 = anc_visits[['client_id','ganc','gest_age','blood_for_glucose','glucose_in_urine',\
                     'protein_in_urine','blood_group','syphilis','rh_factor','visit_number',\
@@ -112,22 +105,15 @@ data4_cat_enco = labelencoder(data4_cat)
 # combine dataframe
 data5 = pd.concat([data4_cat_enco,data4_num],axis = 1)
 
-# define outcome condictions based on detection cutpoints
-# this is the same as data labeling
-chronic_hypertension = (data5['systolic'] >= 140) & (data5['diastolic'] >= 90) & (data5['gest_age'] <= 20)
-gestational_hypertension = (data5['systolic'] >= 140) & (data5['diastolic'] >= 90) & (data5['gest_age'] >= 20)
-pre_eclampsia = (data5['systolic'] >= 140) & (data5['diastolic'] >= 90) & (data5['protein_in_urine'] == 1) & (data5['gest_age'] >= 20)
-
-
+# check for hypertensive dissorders during pregnancy hddp
+hddp = (data5['systolic'] >= 140) & (data5['diastolic'] >= 90)
 
 data5['label'] = 0
-data5.loc[chronic_hypertension, 'label'] = 1
-data5.loc[gestational_hypertension, 'label'] = 2
-data5.loc[pre_eclampsia, 'label'] = 3
+data5.loc[hddp, 'label'] = 1
 
 # print data labeling
-print('Detect outcome conditions by cutpoints')
-print('0:No-Risk, 1: Chronic Hypertension, 2: Gestational Hypertension, 3: Pre-eclampsia \n', data5['label'].value_counts())
+print('Print the outcome condition (hypertensive disorder during pregnancy) using cutppoints')
+print('0:No-Risk, 1: Risk of hypertensive dissorder during pregnancy \n', data5['label'].value_counts())
 
 # reduce the dataset then drop NA
 data6 = data5[['systolic', 'diastolic', 'protein_in_urine', 'temperature', 'bmi', 'blood_for_glucose', \
@@ -135,7 +121,7 @@ data6 = data5[['systolic', 'diastolic', 'protein_in_urine', 'temperature', 'bmi'
 print('label count before dropping NA:', data6['label'].value_counts())
 
 # index data
-label_2_rows = data6[data6['label'] == 2]
+label_2_rows = data6[data6['label'] == 1]
 
 # fill NA with median value
 median_values = label_2_rows.drop('label', axis = 1).median()
@@ -145,7 +131,7 @@ for index, row in label_2_rows.iterrows():
 data6_no_NAs = data6.dropna() # this to be discussed, and presented for discussion
 print('label count after dropping NA:', data6_no_NAs['label'].value_counts())
 
-training_data = data6_no_NAs.loc[(data6_no_NAs['label'] == 0) | (data6_no_NAs['label'] == 2)]
+training_data = data6_no_NAs.loc[(data6_no_NAs['label'] == 0) | (data6_no_NAs['label'] == 1)]
 print('training data', training_data['label'].value_counts())
 
 
@@ -197,9 +183,6 @@ from sklearn.model_selection import (GridSearchCV,train_test_split,cross_val_sco
 X_res_temp = np.asarray(X_res)
 y_res_temp = np.asarray(y_res)
 
-# our y_res has [0, 2], would like to change it [0, 1]
-y_res_temp = np.where(y_res_temp == 2, 1, y_res_temp)
-y_res_temp
 
 # split train sets and test sets
 X_train, X_test, y_train, y_test  = train_test_split(X_res_temp,y_res_temp,test_size = 0.1,shuffle = True,random_state = 42)
@@ -255,13 +238,9 @@ pipe = Pipeline([('scaler', StandardScaler()),('sffs', sffs)])
 
 # fit
 
-# XGB will expect the unique values of `y`. [0 1], but in this our currrent y_res got [0 2]
-# replace 2 with 1
-y_res_2 = y_res.replace(2, 1)
 
-print("A3")
 # fit algorithm
-pipesfs = pipe.fit(X_res, y_res_2)
+pipesfs = pipe.fit(X_res, y_res)
 print("A4")
 # retrieve the best combination information from the last step of the pipeline (sffs)
 best_combination_acc = pipe.named_steps['sffs'].k_score_
@@ -271,7 +250,6 @@ print('best combination (ACC: %.3f): %s\n' % (best_combination_acc, best_combina
 # print('all subsets:\n', sffs.subsets_)
 
 # Plotting
-
 plt.rcParams["figure.figsize"] = [6, 6]
 from mlxtend.plotting import plot_sequential_feature_selection as plot_sfs
 
@@ -289,7 +267,7 @@ rfecv = RFECV(estimator = temp_model,step = 1,min_features_to_select = 4,cv = kf
 pipe = Pipeline([('scaler', StandardScaler()),('rfecv', rfecv)])
 
 # Fit the RFE selector on your data
-pipe.fit(X_res, y_res_2)
+pipe.fit(X_res, y_res)
 
 # Get the selected feature indices
 selected_features_indices = pipe.named_steps['rfecv'].support_
@@ -482,7 +460,7 @@ for round in range (num_rounds):
       local_acc = np.diag(local_cm)/local_support
       kf_per_class_results.append(local_acc)
 
-joblib.dump(best_classifier, Path(BASE_DIR).joinpath("model/mmama_classifier.joblib"))
+joblib.dump(best_classifier, Path(BASE_DIR).joinpath("model/mmama_model.joblib"))
 
 elapsed = time() - start
 print("Time elapsed: {0:.2f} minutes ({1:.1f} sec)".format(

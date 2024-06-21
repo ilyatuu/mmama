@@ -25,12 +25,12 @@ class Predictor(BasePredictor):
 
         for i in result:
             if i == 0:
-                prediction.append("GH_Negative")
+                prediction.append("No Risk")
             else:
-                prediction.append("GH_Positive")
+                prediction.append("Risk exist")
 
-        GH_prediction = np.asarray(prediction)
+        predictions = np.asarray(prediction)
 
-        return GH_prediction
+        return predictions
 
 joblib.dump(Predictor, "model/mmama_predictor.sav")
