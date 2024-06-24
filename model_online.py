@@ -106,7 +106,7 @@ data4_cat_enco = labelencoder(data4_cat)
 data5 = pd.concat([data4_cat_enco,data4_num],axis = 1)
 
 # check for hypertensive dissorders during pregnancy hddp
-hddp = (data5['systolic'] >= 140) & (data5['diastolic'] >= 90)
+hddp = (data5['systolic'] >= 140) | (data5['diastolic'] >= 90)
 
 data5['label'] = 0
 data5.loc[hddp, 'label'] = 1
