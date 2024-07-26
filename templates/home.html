@@ -198,7 +198,7 @@
             }];
             $.ajax({
                 type:'POST',
-                url:'predict',
+                url:'/predict/',
                 data:JSON.stringify(data),
                 contentType:'application/json'
             }).done((data)=>{
