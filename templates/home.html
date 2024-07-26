@@ -246,7 +246,7 @@
         $('#btnSubmitCSV').click(function(){
             $.ajax({
                 type:'POST',
-                url:'predict',
+                url:'/predict/',
                 data:JSON.stringify(data1),
                 contentType:'application/json'
             }).done((data)=>{
