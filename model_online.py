@@ -41,6 +41,10 @@ total = data1.isnull().sum().sort_values(ascending=False)
 percent = round(data1.isnull().sum()/data1.isnull().count()*100, 2).sort_values(ascending = False)
 summary = pd.concat([total,percent],axis = 1, keys = ['Total', 'Percent']).transpose()
 
+# visit frequency table
+vs = data1['visit_number'].value_counts()
+
+
 # collapse to individual observation using client id and visit number
 data2 = data1.sort_values(['client_id','visit_number'],ascending = [False, True])
 data3 = data2.replace('[null]', np.nan)
@@ -105,34 +109,36 @@ data4_cat_enco = labelencoder(data4_cat)
 # combine dataframe
 data5 = pd.concat([data4_cat_enco,data4_num],axis = 1)
 
-# check for hypertensive dissorders during pregnancy hddp
+# deriving the outcome variable
+# derive hypertensive dissorders during pregnancy hddp using 
+# classical definitions
 hddp = (data5['systolic'] >= 140) | (data5['diastolic'] >= 90)
 
-data5['label'] = 0
-data5.loc[hddp, 'label'] = 1
+data5['hddp'] = 0              # No Risk of HDDP
+data5.loc[hddp, 'hddp'] = 1    # Risk of HDDP
 
 # print data labeling
 print('Print the outcome condition (hypertensive disorder during pregnancy) using cutppoints')
-print('0:No-Risk, 1: Risk of hypertensive dissorder during pregnancy \n', data5['label'].value_counts())
+print('0:No-Risk, 1: Risk of hypertensive dissorder during pregnancy \n', data5['hddp'].value_counts())
 
 # reduce the dataset then drop NA
 data6 = data5[['systolic', 'diastolic', 'protein_in_urine', 'temperature', 'bmi', 'blood_for_glucose', \
-               'syphilis', 'label']]
-print('label count before dropping NA:', data6['label'].value_counts())
+               'syphilis', 'hddp']]
+print('label count before dropping NA:', data6['hddp'].value_counts())
 
 # index data
-label_2_rows = data6[data6['label'] == 1]
+label_2_rows = data6[data6['hddp'] == 1]
 
 # fill NA with median value
-median_values = label_2_rows.drop('label', axis = 1).median()
+median_values = label_2_rows.drop('hddp', axis = 1).median()
 for index, row in label_2_rows.iterrows():
     data6.loc[index] = data6.loc[index].fillna(median_values)
 
 data6_no_NAs = data6.dropna() # this to be discussed, and presented for discussion
-print('label count after dropping NA:', data6_no_NAs['label'].value_counts())
+print('label count after dropping NA:', data6_no_NAs['hddp'].value_counts())
 
-training_data = data6_no_NAs.loc[(data6_no_NAs['label'] == 0) | (data6_no_NAs['label'] == 1)]
-print('training data', training_data['label'].value_counts())
+training_data = data6_no_NAs.loc[(data6_no_NAs['hddp'] == 0) | (data6_no_NAs['hddp'] == 1)]
+print('training data', training_data['hddp'].value_counts())
 
 
 # Rule of thumb balance the instances, when one class is overepresented
@@ -142,7 +148,7 @@ print('training data', training_data['label'].value_counts())
 # define X (matrix of features) and y (list of labels)
 
 X = training_data.iloc[:, :-1] # select all columns except the last one
-y = training_data["label"]
+y = training_data["hddp"]
 
 # Balance the training data
 # return x-resampled and y-resampled
@@ -161,22 +167,41 @@ sns.set_theme(context = "paper", style = "white", palette = "deep", font_scale =
 plt.figure(figsize = (15, 15))
 fig, axs = plt.subplots(1, 3)
 
-sns.violinplot(x = "label",y = "systolic",hue = 'label',data = temp_df,palette = 'colorblind',ax = axs[0], legend = False)
-sns.violinplot(x = "label",y = "diastolic",hue = 'label',data = temp_df,palette = 'colorblind',ax = axs[1], legend = False)
-sns.violinplot(x = "label",y = "temperature",hue = 'label',data = temp_df,palette = 'colorblind',ax = axs[2],legend = False)
+sns.violinplot(x = "hddp",y = "systolic",hue = 'hddp',data = temp_df,palette = 'colorblind',ax = axs[0], legend = False)
+sns.violinplot(x = "hddp",y = "diastolic",hue = 'hddp',data = temp_df,palette = 'colorblind',ax = axs[1], legend = False)
+sns.violinplot(x = "hddp",y = "temperature",hue = 'hddp',data = temp_df,palette = 'colorblind',ax = axs[2],legend = False)
 fig.tight_layout(pad = .5)
 fig.savefig('figures/violine.png')
 
 plt.rcParams["figure.figsize"] = [15,15]
-sns.pairplot(temp_df, hue = "label", height = 3, palette = 'colorblind').savefig('figures/scatterplots.png')
+sns.pairplot(temp_df, hue = "hddp", height = 3, palette = 'colorblind').savefig('figures/scatterplots.png')
 
-
-plt.rcParams["figure.figsize"] = [15,10]
+plt.rcParams["figure.figsize"] = [15,15]
 sns.heatmap(temp_df.corr(method = 'pearson'),annot = True,vmin = -1,vmax = 1).get_figure().savefig('figures/heatmap1.png')
+# clear figure
+plt.clf()
 
 # drop protein in urine as it has no influence in the model
-sns.heatmap(temp_df.drop(['protein_in_urine'], axis = 1).corr(method = 'pearson'),annot = True,vmin = -1,vmax = 1).get_figure().savefig('figures/heatmap2.png')
+corr = temp_df.drop(['protein_in_urine'], axis = 1).corr(method = 'pearson')
 
+# create the mask to remote the top part of the correlation matrix
+#mask = np.zeros_like(corr, dtype=bool)
+#mask[np.tril_indices_from(mask)] = True
+#np.fill_diagonal(mask,False)
+mask = np.triu(np.ones_like(corr,dtype=bool))
+
+# Consider showing p-value in the correlation matrix
+# see the link below
+# https://tosinharold.medium.com/enhancing-correlation-matrix-heatmap-plots-with-p-values-in-python-41bac6a7fd77
+
+#sns.set_theme(font_scale=1.8)
+sns.heatmap(corr,
+            annot = True,
+            vmin = -1,
+            vmax = 1,
+            fmt='.2f',
+            mask=mask).get_figure().savefig('figures/heatmap2.png')
+#sns.heatmap(temp_df.drop(['protein_in_urine'], axis = 1).corr(method = 'pearson'),annot = True,vmin = -1,vmax = 1).get_figure().savefig('figures/heatmap2.png')
 # Split training and test data
 # We wont drop glucose in urine as for now, until we have discussed and agreed
 from sklearn.model_selection import (GridSearchCV,train_test_split,cross_val_score,RandomizedSearchCV,KFold)
@@ -241,7 +266,6 @@ pipe = Pipeline([('scaler', StandardScaler()),('sffs', sffs)])
 
 # fit algorithm
 pipesfs = pipe.fit(X_res, y_res)
-print("A4")
 # retrieve the best combination information from the last step of the pipeline (sffs)
 best_combination_acc = pipe.named_steps['sffs'].k_score_
 best_combination_idx = pipe.named_steps['sffs'].k_feature_idx_
@@ -304,15 +328,16 @@ results_df.rename(columns = {'variable':'Model', 'value':'Accuracy'},inplace = T
 # Plotting the algorithm selection
 
 plt.figure(figsize = (6, 4))
-
+plt.clf()
 sns.boxplot(x = 'Model',y = 'Accuracy',data = results_df,hue = 'Model',legend = False,palette = 'colorblind')
 sns.despine(offset = 10, trim = True)
 plt.xticks(rotation = 90)
 plt.yticks(np.arange(0.2, 1.0 + .1, step = 0.2))
 plt.ylabel('Accuracy', weight = 'bold')
 plt.xlabel(" ")
+plt.title("Cross Validation Scores")
 plt.tight_layout()
-plt.savefig('figures/algorithm_comparison.png')
+plt.savefig('figures/classification_comparison.png')
 
 
 # big LOOP for ML training
@@ -460,6 +485,9 @@ for round in range (num_rounds):
       local_acc = np.diag(local_cm)/local_support
       kf_per_class_results.append(local_acc)
 
+      # save results
+      kf_results.to_csv("model/model_results.csv")
+
 joblib.dump(best_classifier, Path(BASE_DIR).joinpath("model/mmama_model.joblib"))
 
 elapsed = time() - start
@@ -488,9 +516,9 @@ class Predictor(BasePredictor):
 
         for i in result:
             if i == 0:
-                prediction.append("GH_Negative")
+                prediction.append("NoRisk")
             else:
-                prediction.append("GH_Positive")
+                prediction.append("Risk")
 
         GH_prediction = np.asarray(prediction)
 
@@ -498,3 +526,148 @@ class Predictor(BasePredictor):
 
 joblib.dump(Predictor, "model/mmama_predictor.sav")
 joblib.dump(Predictor, "model/mmama_predictor.joblib")
+
+
+# define a convenient plotting function (confusion matrix)
+def plot_confusion_matrix(
+    cm,
+    classes,
+    normalise = True,
+    text = False,
+    title = 'Confusion matrix',
+    xrotation = 0,
+    yrotation = 0,
+    cmap = plt.cm.Blues,
+    printout = False
+    ):
+    """
+    This function prints and plots the confusion matrix.
+    Normalisation can be applied by setting 'normalise=True'.
+    """
+
+    if normalise:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+
+        if printout:
+            print("Normalized confusion matrix")
+
+    else:
+        if printout:
+            print('Confusion matrix')
+
+    if printout:
+        print(cm)
+
+    plt.figure(figsize=(6, 4))
+    plt.imshow(
+        cm,
+        interpolation = 'nearest',
+        cmap = cmap,
+        vmin = 0.2,
+        vmax = 1.0
+        )
+
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    # plt.set_ylim(len(classes)-0.5, -0.5)
+    plt.xticks(tick_marks, classes, rotation=xrotation)
+    plt.yticks(tick_marks, classes, rotation=yrotation)
+
+    fmt = '.2f' if normalise else 'd'
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]),
+                                  range(cm.shape[1])):
+            plt.text(
+                j,
+                i,
+                format(cm[i, j], fmt),
+                horizontalalignment="center",
+                color="white" if cm[i, j] > thresh else "black"
+                )
+
+    plt.tight_layout()
+    plt.ylabel('True label', weight = 'bold')
+    plt.xlabel('Predicted label', weight = 'bold')
+    
+    fig1 = plt.gcf()
+    fig1.savefig('figures/model_accuracy.png')
+    #plt.close(fig1)
+    
+
+
+# plot averaged confusion matrix for training
+averaged_CM = confusion_matrix(save_true, save_predicted)
+classes = np.unique(np.sort(y_val))
+plot_confusion_matrix(averaged_CM, classes, title="Confusion Matrix 1")
+
+# features importance
+model_results = pd. read_csv("model/model_results.csv")
+features = pd.DataFrame(ast.literal_eval(model_results["Feature importances"][0]))
+
+# iterate to get results from each validation
+for record in model_results["Feature importances"][1:]:
+    feature = pd.DataFrame(ast.literal_eval(record))
+    features = pd.concat(
+                [features, feature],
+                axis=1,
+                ignore_index=True
+                )
+    
+# generate mean
+features["mean"] = features.mean(axis=1)
+features["sem"] = features.sem(axis=1)
+features.sort_values(by="mean", inplace=True)
+
+sns.set_theme(context="paper",
+    style="white",
+    font_scale=2.0,
+    rc={"font.family": "Dejavu Sans"})
+
+plt.clf() # clear previous figure
+fig2 = features["mean"].plot(
+                                figsize = (6, 8),
+                                kind = "barh",
+                                # orientation = 'vertical',
+                                legend = False,
+                                xerr = features["sem"],
+                                ecolor = 'k'
+                            )
+# plt.rcParams['ytick.labelsize'] = "small"
+plt.title("Feature Importance", pad=20)
+plt.tight_layout()
+#plt.xlabel("Feature Importance", weight = 'bold')
+sns.despine()
+fig2 = plt.gcf()
+fig2.savefig('figures/features_importance.png')
+
+## Explain the modal prediciton using SHARP
+explainer = shap.Explainer(best_classifier)
+shap_values = explainer(X_train)
+shap.plots.waterfall(shap_values[0], show=False)
+fig3 = plt.gcf()
+fig3.savefig('figures/features_explainer.png')
+plt.close(fig3)
+
+## summarize the effect of all figures
+plt.tight_layout()
+shap.plots.beeswarm(shap_values, show=False)
+fig4 = plt.gcf()
+fig4.savefig('figures/features_summary.png')
+plt.close(fig4)
+
+## Predict test (validation) data
+X_test_scl = scaler.transform(X = X_test)
+y_pred = best_classifier.predict(X_test_scl)
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy: %.2f%%" % (accuracy * 100.0))
+
+# Plotting confusion matrix unseen test data
+cm_unseen = confusion_matrix(y_test, y_pred)
+plot_confusion_matrix(cm_unseen, classes = classes, title="Confusion Matrix 2")
+
+
+# Classification Report
+cr = classification_report(y_test, y_pred)
+print('Classification report : {}')
+print(cr)
