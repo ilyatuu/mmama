@@ -5,18 +5,20 @@
       overflow: inherit;
     }
     .table-header-rotated td.id {
-      font-weight: bold;
+      font-weight: normal;
     }
     .table-header-rotated th {
-      height: 120px;
+      height: 160px;
       white-space: nowrap;
     }
+
     .table-header-rotated th:not(.id) > div {
       transform: translate(-9px, 0px) rotate(-90deg);
       width: 30px;
     }
+
     .table-header-rotated th > div > span {
-      padding: 5px 10px;
+      padding: 5px 5px;
     }
 
     .bootstrap-table .fixed-table-pagination >.pagination-detail .page-list {
@@ -30,7 +32,7 @@
     <div class="container py-4">
       <header class="pb-3 mb-4 border-bottom">
         <a href="/" class="d-flex align-items-center text-body-emphasis text-decoration-none">
-            <img src="{{ url_for('static', path='assets/phit.png') }}" class="img-thumbnail" width="40" height="32" />
+            <img src="{{ url_for('static', path='assets/phit.png') }}" class="img-thumbnail" width="40" height="32" alt="Company Logo"/>
             <span class="fs-4 ms-2">Prime Health Initiative Tanzania (PHIT)</span>
         </a>
       </header>
@@ -114,7 +116,7 @@
                 <div class="row mt-3">
                     <div class="col-md-12">
                         <div class="form-floating">
-                            <textarea id="results" name="results" class="form-control" placeholder="Prediction results" style="height: 80px"></textarea>
+                            <textarea id="results" name="results" class="form-control" placeholder="Prediction results" rows="4"></textarea>
                             <label for="results">prediction results</label>
                         </div>
                     </div>
@@ -128,31 +130,39 @@
               <p>Input a csv file with the following columns</p>
               <p>Download sample file <a href="{{ url_for('static', path='data/anc_test_data.csv') }}">here</a></p>
               <div class="mb-3">
-                <input class="form-control" id="inputFile" name="inputFile" type="file" accept=".csv">
+                <input class="form-control" id="inputFile" name="inputFile" type="file" accept=".csv" placeholder="input file">
               </div>
-              <button class="btn btn-outline-secondary" type="button" id="btnSubmitCSV" name="btnSubmitCSV">predict</button>
+              
+              
+              <div>
+                <button class="btn btn-outline-secondary" type="button" id="btnSubmitCSV" name="btnSubmitCSV">predict</button>
+                <span class="spinner-border spinner-border-sm mx-2" role="status" aria-hidden="true" style="display: none;"></span>
+              </div>
+
               <div id="toolbar"></div>
               <div class="mt-4">
                 <table  id="tblResults"
                         data-toggle="table"
                         data-toolbar="#toolbar"
-                        data-show-export="false"
+                        data-show-export="true"
+                        data-export-types="['csv']"
                         data-show-columns="false"
-                        data-show-toggle="true"
+                        data-show-toggle="false"
                         data-search="false"
-                        data-height="460"
+                        data-height="600"
                         data-pagination="true"
                         data-classes="table table-hover table-header-rotated">
                     <thead>
                         <tr>
-                            <th data-field="systolic" data-sortable="true">systolic</th>
-                            <th data-field="diastolic" data-sortable="true">diastolic</th>
-                            <th data-field="gestationage" data-sortable="true">gest age</th>
-                            <th data-field="protein_in_urine" data-sortable="true">protein in urine</th>
-                            <th data-field="temperature" data-sortable="true">temperature</th>
-                            <th data-field="bmi" data-sortable="true">bmi</th>
-                            <th data-field="blood_for_glucose" data-sortable="true">blood for glucose</th>
-                            <th data-field="prediction" data-sortable="true">prediction</th>
+                            <th data-field="id" data-sortable="false" class="id">id</th>
+                            <th data-field="systolic" data-sortable="false">systolic</th>
+                            <th data-field="diastolic" data-sortable="false">diastolic</th>
+                            <th data-field="gestationage" data-sortable="false">gest age</th>
+                            <th data-field="protein_in_urine" data-sortable="false">protein in urine</th>
+                            <th data-field="temperature" data-sortable="false">temperature</th>
+                            <th data-field="bmi" data-sortable="false">bmi</th>
+                            <th data-field="blood_for_glucose" data-sortable="false">blood for glucose</th>
+                            <th data-field="prediction" data-sortable="false">prediction</th>
                         </tr>
                     </thead>
                 </table>
@@ -170,12 +180,6 @@
 {% block javascript %}
 <script>
     $(document).ready(function () {
-
-        // $.fn.nval = function() {
-        //     return Number(this.val())
-        // };
-        // the above creates nval() function so that you can use as
-        // $('#systolic').nval()
 
         var data1;
 
@@ -244,6 +248,9 @@
         })
 
         $('#btnSubmitCSV').click(function(){
+            //show loader
+            $(this).find('.spinner-border').show();
+            
             $.ajax({
                 type:'POST',
                 url:'/predict/',
@@ -251,6 +258,7 @@
                 contentType:'application/json'
             }).done((data)=>{
                 console.log(data);
+                $('#btnSubmitCSV').find('.spinner-border').hide();
                 $('#tblResults').bootstrapTable('load',data);
             }).fail((err)=>{
                 console.log(err);

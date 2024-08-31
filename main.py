@@ -22,9 +22,22 @@ async def index(request:Request):
 @app.post('/predict/', response_model=List[ItemOut])
 async def mmama_predict(items: List[ItemIn]):
     df = pd.DataFrame([i.model_dump() for i in items])
+
+    # check if ID column exist
+    id_col = "id"
+    if id_col in df.columns:
+        ids = df[id_col].copy()
+        df.drop(columns=id_col, inplace=True)
+    else:
+        ids = range(1,len(df)+1)
+
     model = joblib.load('model/mmama_predictor.sav')
     predictions = model().predict(df.to_numpy())
     df['prediction'] = predictions
+
+    # return the IDs to the dataframe
+    df['id'] = ids
+    
     dict_data = df.to_dict(orient="records")
     #return [{"id":  "1", "prediction": "value"}, {"id":  "2", "prediction": "value"}]
     return dict_data

@@ -1,6 +1,8 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class ItemIn(BaseModel):
+    id:Optional[int]=999
     systolic: float
     diastolic: float
     gestationage: float
@@ -18,3 +20,4 @@ class ItemOut(BaseModel):
     bmi:float
     blood_for_glucose:float
     prediction:str
+    id:int
