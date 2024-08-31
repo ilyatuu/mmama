@@ -136,7 +136,7 @@
               
               <div>
                 <button class="btn btn-outline-secondary" type="button" id="btnSubmitCSV" name="btnSubmitCSV">predict</button>
-                <span class="spinner-border spinner-border-sm mx-2" role="status" aria-hidden="true" style="display: none;"></span>
+                <span id="btnSubmitCSVSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
               </div>
 
               <div id="toolbar"></div>
@@ -249,7 +249,9 @@
 
         $('#btnSubmitCSV').click(function(){
             //show loader
-            $(this).find('.spinner-border').show();
+            // Disable the submit button and show spinner
+            $('#btnSubmitCSV').prop('disabled', true); // Disable button
+            $('#btnSubmitCSVSpinner').removeClass('d-none'); // Show spinner
             
             $.ajax({
                 type:'POST',
@@ -258,13 +260,14 @@
                 contentType:'application/json'
             }).done((data)=>{
                 console.log(data);
-                $('#btnSubmitCSV').find('.spinner-border').hide();
                 $('#tblResults').bootstrapTable('load',data);
+                $('#btnSubmitCSV').prop('disabled', false); // Enable button
+                $('#btnSubmitCSVSpinner').addClass('d-none'); // Hide spinner
             }).fail((err)=>{
                 console.log(err);
             }).always(()=>{
                 //console.log('always called');
-            })
+            });
         })
     })
 </script>
