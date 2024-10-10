@@ -118,8 +118,8 @@ data5['hddp'] = 0              # No Risk of HDDP
 data5.loc[hddp, 'hddp'] = 1    # Risk of HDDP
 
 # print data labeling
-print('Print the outcome condition (hypertensive disorder during pregnancy) using cutppoints')
-print('0:No-Risk, 1: Risk of hypertensive dissorder during pregnancy \n', data5['hddp'].value_counts())
+print('Print the outcome condition (hypertensive disorder during pregnancy - hddp) using cutppoints')
+print('0:No-Risk, 1: Risk of hddp \n', data5['hddp'].value_counts())
 
 # reduce the dataset then drop NA
 data6 = data5[['systolic', 'diastolic', 'protein_in_urine', 'temperature', 'bmi', 'blood_for_glucose', \
@@ -175,6 +175,9 @@ fig.savefig('figures/violine.png')
 
 plt.rcParams["figure.figsize"] = [15,15]
 sns.pairplot(temp_df, hue = "hddp", height = 3, palette = 'colorblind').savefig('figures/scatterplots.png')
+
+
+plt.clf()
 
 plt.rcParams["figure.figsize"] = [15,15]
 sns.heatmap(temp_df.corr(method = 'pearson'),annot = True,vmin = -1,vmax = 1).get_figure().savefig('figures/heatmap1.png')
